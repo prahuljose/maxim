@@ -53,111 +53,152 @@ import '../styles/analyser.css';
       <span class="status" id="status" role="status" aria-live="polite"></span>
     </div>
 
-    <div id="verdict-box" class="verdict">
-      <label class="v-pick">
-        <span>Reported problem</span>
-        <select id="issue" name="issue" autocomplete="off"></select>
-      </label>
-      <div id="verdict" aria-live="polite"></div>
+    <div class="views no-print" role="tablist" aria-label="Report view">
+      <button type="button" role="tab" id="tab-report" aria-controls="view-report" aria-selected="true">Analysis</button>
+      <button type="button" role="tab" id="tab-ai" aria-controls="view-ai" aria-selected="false" tabindex="-1">
+        <svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14"><path d="M8 1.5l1.6 3.9 3.9 1.6-3.9 1.6L8 12.5 6.4 8.6 2.5 7l3.9-1.6z" fill="currentColor"/></svg>
+        AI Second Opinion<span class="tab-dot" id="ai-dot" hidden></span>
+      </button>
     </div>
 
-    <div id="scorecards"></div>
-
-    <h2 class="sec">Findings</h2>
-    <div id="findings"></div>
-
-    <h2 class="sec">Timeline</h2>
-    <div class="panel">
-      <div class="chart" id="timeline"></div>
-      <p class="legend lanes-legend">
-        <span><i class="sw s2"></i>Far end audible</span>
-        <span><i class="sw s1"></i>Agent audible</span>
-        <span><i class="sw muted"></i>Muted</span>
-        <span><i class="sw hold"></i>Hold</span>
-        <span><i class="sw red"></i>Problem</span>
-        <span><i class="sw amber"></i>Warning</span>
-      </p>
-    </div>
-
-    <h2 class="sec">Charts <span class="hint">Hover any chart to compare the same moment on all of them</span></h2>
-    <div id="charts" class="charts"></div>
-
-    <div class="more">
-      <details class="fold">
-        <summary>More Charts</summary>
-        <div id="charts-more" class="charts"></div>
-      </details>
-
-      <details class="fold">
-        <summary>Network Path</summary>
-        <div id="connection"></div>
-      </details>
-
-      <details class="fold">
-        <summary>Device &amp; Browser</summary>
-        <div id="device"></div>
-      </details>
-
-      <details class="fold">
-        <summary>Totals</summary>
-        <div id="totals"></div>
-      </details>
-
-      <details class="fold">
-        <summary>Negotiation (SDP)</summary>
-        <div id="negotiations"></div>
-      </details>
-
-      <details class="fold">
-        <summary>Raw Stats</summary>
-        <p class="muted small">Plot any stat Chrome recorded. Counters can be shown as a per-second rate.</p>
-        <div class="ex-controls">
-          <label class="field"><span>Stat</span><select id="ex-series" name="ex-series" autocomplete="off"></select></label>
-          <label class="field"><span>Field</span><select id="ex-field" name="ex-field" autocomplete="off"></select></label>
-          <label class="check"><input type="checkbox" id="ex-rate" name="ex-rate" checked /> Per-second rate</label>
-        </div>
-        <div class="panel"><div class="chart" id="ex-chart"></div></div>
-      </details>
-
-      <details class="fold">
-        <summary>Event Log</summary>
-        <label class="field inline"><span>Show</span><select id="log-filter" name="log-filter" autocomplete="off"></select></label>
-        <div id="log"></div>
-      </details>
-
-      <details class="fold" id="ai-fold">
-        <summary>AI Second Opinion <span class="hint">Optional</span></summary>
-        <p class="muted">
-          This site never calls an AI. To get a second opinion, copy the prompt into any AI tool and paste its reply
-          back here. IP addresses are masked in the prompt, and the reply is shown as interpretation only.
-        </p>
-        <label class="field">
-          <span>Notes for the AI <small>optional</small></span>
-          <textarea id="note" name="note" rows="2" autocomplete="off" placeholder="e.g. customer said the agent kept cutting out around minute 3…"></textarea>
+    <div id="view-report" role="tabpanel" aria-labelledby="tab-report">
+      <div id="verdict-box" class="verdict">
+        <label class="v-pick">
+          <span>Reported problem</span>
+          <select id="issue" name="issue" autocomplete="off"></select>
         </label>
-        <div class="ai-steps">
-          <div>
-            <label class="step" for="ai-prompt"><span aria-hidden="true">1</span>Copy the prompt</label>
-            <textarea id="ai-prompt" name="ai-prompt" rows="7" readonly spellcheck="false"></textarea>
-            <button type="button" class="btn" id="ai-copy">Copy Prompt</button>
+        <div id="verdict" aria-live="polite"></div>
+      </div>
+
+      <div id="scorecards"></div>
+
+      <div id="ai-banner" class="ai-banner no-print"></div>
+
+      <h2 class="sec">Findings</h2>
+      <div id="findings"></div>
+
+      <h2 class="sec">Timeline</h2>
+      <div class="panel">
+        <div class="chart" id="timeline"></div>
+        <p class="legend lanes-legend">
+          <span><i class="sw s2"></i>Far end audible</span>
+          <span><i class="sw s1"></i>Agent audible</span>
+          <span><i class="sw muted"></i>Muted</span>
+          <span><i class="sw hold"></i>Hold</span>
+          <span><i class="sw red"></i>Problem</span>
+          <span><i class="sw amber"></i>Warning</span>
+        </p>
+      </div>
+
+      <h2 class="sec">Charts <span class="hint">Hover any chart to compare the same moment on all of them</span></h2>
+      <div id="charts" class="charts"></div>
+
+      <div class="more">
+        <details class="fold">
+          <summary>More Charts</summary>
+          <div id="charts-more" class="charts"></div>
+        </details>
+
+        <details class="fold">
+          <summary>Network Path</summary>
+          <div id="connection"></div>
+        </details>
+
+        <details class="fold">
+          <summary>Device &amp; Browser</summary>
+          <div id="device"></div>
+        </details>
+
+        <details class="fold">
+          <summary>Totals</summary>
+          <div id="totals"></div>
+        </details>
+
+        <details class="fold">
+          <summary>Negotiation (SDP)</summary>
+          <div id="negotiations"></div>
+        </details>
+
+        <details class="fold">
+          <summary>Raw Stats</summary>
+          <p class="muted small">Plot any stat Chrome recorded. Counters can be shown as a per-second rate.</p>
+          <div class="ex-controls">
+            <label class="field"><span>Stat</span><select id="ex-series" name="ex-series" autocomplete="off"></select></label>
+            <label class="field"><span>Field</span><select id="ex-field" name="ex-field" autocomplete="off"></select></label>
+            <label class="check"><input type="checkbox" id="ex-rate" name="ex-rate" checked /> Per-second rate</label>
           </div>
-          <div>
-            <label class="step" for="ai-reply"><span aria-hidden="true">2</span>Paste the reply</label>
-            <textarea id="ai-reply" name="ai-reply" rows="7" autocomplete="off" spellcheck="false" placeholder="Paste the AI’s JSON reply…"></textarea>
+          <div class="panel"><div class="chart" id="ex-chart"></div></div>
+        </details>
+
+        <details class="fold">
+          <summary>Event Log</summary>
+          <label class="field inline"><span>Show</span><select id="log-filter" name="log-filter" autocomplete="off"></select></label>
+          <div id="log"></div>
+        </details>
+        <details class="fold">
+          <summary>How Findings Are Decided</summary>
+          <div id="thresholds"></div>
+        </details>
+      </div>
+    </div>
+
+    <div id="view-ai" class="ai-view" role="tabpanel" aria-labelledby="tab-ai" hidden>
+      <div class="ai-intro">
+        <h2 id="ai-title" tabindex="-1">Get an AI Second Opinion</h2>
+        <p class="muted">
+          Ask any AI tool to review this call. This site never contacts one: you copy a prompt out, and paste the
+          reply back in. IP addresses are masked, and every number on the page still comes from the dump.
+        </p>
+      </div>
+
+      <ol class="steps" id="ai-steps">
+        <li class="stepc" data-step="1">
+          <span class="step-n" aria-hidden="true"><i>1</i></span>
+          <div class="step-body">
+            <h3>Add context <span class="hint">Optional</span></h3>
+            <p class="muted small">The more the AI knows about the complaint, the better its answer.</p>
+            <div class="ctx">
+              <label class="field"><span>Reported problem</span><select id="ai-issue" name="ai-issue" autocomplete="off"></select></label>
+              <label class="field"><span>Notes</span><textarea id="note" name="note" rows="2" autocomplete="off" placeholder="e.g. customer said the agent kept cutting out around minute 3…"></textarea></label>
+            </div>
+          </div>
+        </li>
+        <li class="stepc" data-step="2">
+          <span class="step-n" aria-hidden="true"><i>2</i></span>
+          <div class="step-body">
+            <h3>Copy the prompt</h3>
+            <p class="muted small">It includes the measured findings and a timeline of the call.</p>
+            <div class="row wrap-row">
+              <button type="button" class="btn primary" id="ai-copy">Copy Prompt</button>
+              <span class="muted small">then paste it into</span>
+              <a class="btn" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">ChatGPT ↗</a>
+              <a class="btn" href="https://claude.ai/new" target="_blank" rel="noopener noreferrer">Claude ↗</a>
+              <a class="btn" href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer">Gemini ↗</a>
+            </div>
+            <p class="copy-msg small" id="ai-copy-msg" role="status" aria-live="polite"></p>
+            <details class="peek" id="ai-peek">
+              <summary>Preview the prompt</summary>
+              <label class="sr" for="ai-prompt">Prompt</label>
+              <textarea id="ai-prompt" name="ai-prompt" rows="8" readonly spellcheck="false"></textarea>
+            </details>
+          </div>
+        </li>
+        <li class="stepc" data-step="3">
+          <span class="step-n" aria-hidden="true"><i>3</i></span>
+          <div class="step-body">
+            <h3><label for="ai-reply">Paste the reply</label></h3>
+            <p class="muted small">Paste the AI’s whole answer. It’s read as soon as you paste.</p>
+            <textarea id="ai-reply" name="ai-reply" rows="5" autocomplete="off" spellcheck="false" placeholder="Paste the AI’s JSON reply…"></textarea>
             <div class="row">
               <button type="button" class="btn primary" id="ai-show">Show Opinion</button>
               <button type="button" class="btn" id="ai-clear">Clear</button>
             </div>
             <p class="load-error" id="ai-error" role="alert" hidden></p>
           </div>
-        </div>
-      </details>
-      <div id="ai-out"></div>
+        </li>
+      </ol>
 
-      <details class="fold">
-        <summary>How Findings Are Decided</summary>
-        <div id="thresholds"></div>
-      </details>
+      <div id="ai-out" aria-live="polite"></div>
     </div>
   </section>
 </Base>

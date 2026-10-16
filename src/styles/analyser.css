@@ -963,6 +963,323 @@ body.dragging .drop {
   margin-bottom: 22px;
 }
 
+/* ── View tabs ───────────────────────────────────────── */
+.views {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin: 0 0 20px;
+}
+.views [role='tab'] {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  position: relative;
+  margin-bottom: -1px;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.views [role='tab']:hover {
+  color: var(--text);
+}
+.views [role='tab'][aria-selected='true'] {
+  color: var(--text);
+  border-bottom-color: var(--text);
+}
+#tab-ai svg {
+  color: var(--violet);
+}
+#tab-ai[aria-selected='true'] {
+  border-bottom-color: var(--violet);
+}
+.tab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--violet);
+}
+@media (prefers-reduced-motion: no-preference) {
+  [role='tabpanel']:not([hidden]) {
+    animation: fade-in 0.18s ease-out;
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/* ── AI banner (in the analysis) ─────────────────────── */
+.ai-banner:empty {
+  display: none;
+}
+.ai-banner {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--violet) 35%, var(--border));
+  background: linear-gradient(135deg, var(--violet-bg), var(--raised) 70%);
+}
+.ai-banner .ab-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--violet);
+  color: #fff;
+}
+.ai-banner .ab-text {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.ai-banner .ab-text strong {
+  display: block;
+  font-size: 15px;
+}
+.ai-banner .ab-text span {
+  font-size: 13px;
+  color: var(--muted);
+}
+.btn.ai {
+  background: var(--violet);
+  border-color: var(--violet);
+  color: #fff;
+}
+.btn.ai:hover {
+  opacity: 0.9;
+}
+@media (prefers-color-scheme: dark) {
+  .btn.ai,
+  .ai-banner .ab-icon {
+    color: #120a24;
+  }
+}
+
+/* ── AI workspace ────────────────────────────────────── */
+.ai-view {
+  max-width: 760px;
+}
+.ai-intro h2 {
+  font-size: 22px;
+}
+.ai-intro h2:focus {
+  outline: none;
+}
+.ai-intro p {
+  margin: 6px 0 20px;
+}
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.stepc {
+  display: flex;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--raised);
+}
+.stepc.current {
+  border-color: var(--violet);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--violet) 14%, transparent);
+}
+.stepc.done {
+  background: var(--surface);
+}
+.stepc.done .step-body > :not(h3) {
+  opacity: 0.75;
+}
+.step-n {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.step-n i {
+  font-style: normal;
+}
+.stepc.current .step-n {
+  border-color: var(--violet);
+  background: var(--violet);
+  color: #fff;
+}
+.stepc.done .step-n {
+  border-color: var(--green);
+  background: var(--green);
+  color: #fff;
+}
+.stepc.done .step-n i {
+  display: none;
+}
+.stepc.done .step-n::after {
+  content: '';
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+.step-body {
+  flex: 1;
+  min-width: 0;
+}
+.step-body h3 {
+  font-size: 15px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.step-body h3 label {
+  cursor: pointer;
+}
+.step-body > p {
+  margin: 2px 0 12px;
+}
+.ctx {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .ctx {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.ctx .field {
+  margin: 0;
+}
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.wrap-row {
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 0;
+}
+.copy-msg {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+.copy-msg:empty {
+  display: none;
+}
+.peek {
+  margin-top: 12px;
+  font-size: 13px;
+}
+.peek summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.peek textarea,
+#ai-reply {
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Result: measured vs AI */
+.ai-result {
+  margin-top: 24px;
+}
+.ai-result h3.rh {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+.vs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .vs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.vs-col {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: var(--raised);
+  min-width: 0;
+}
+.vs-col.ai-side {
+  border-color: color-mix(in srgb, var(--violet) 40%, var(--border));
+}
+.vs-col .who {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.vs-col.ai-side .who {
+  color: var(--violet);
+}
+.vs-col h4 {
+  font-size: 15px;
+  margin: 6px 0;
+}
+.vs-col ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.agree {
+  margin: 12px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.ai-tl {
+  margin-top: 12px;
+}
+.ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.chart .span.ai {
+  fill: var(--violet);
+}
+.sw.violet {
+  background: var(--violet);
+}
+
 /* ── AI ──────────────────────────────────────────────── */
 .ai-steps {
   display: grid;
@@ -1054,9 +1371,11 @@ body.dragging .drop {
 }
 
 @media print {
-  .fold:not([open]),
-  #ai-fold {
+  .fold:not([open]) {
     display: none;
+  }
+  #view-report[hidden] {
+    display: block !important;
   }
   .charts {
     grid-template-columns: 1fr 1fr;

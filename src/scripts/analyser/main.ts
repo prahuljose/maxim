@@ -47,6 +47,14 @@ const els = {
   clearReply: $<HTMLButtonElement>('ai-clear'),
   replyError: $('ai-error'),
   aiOut: $('ai-out'),
+  aiBanner: $('ai-banner'),
+  aiIssue: $<HTMLSelectElement>('ai-issue'),
+  aiSteps: $('ai-steps'),
+  aiDot: $('ai-dot'),
+  tabReport: $<HTMLButtonElement>('tab-report'),
+  tabAi: $<HTMLButtonElement>('tab-ai'),
+  viewReport: $('view-report'),
+  viewAi: $('view-ai'),
   showIps: $<HTMLInputElement>('show-ips'),
   copySummary: $<HTMLButtonElement>('copy-summary'),
   print: $<HTMLButtonElement>('print'),
@@ -65,10 +73,16 @@ interface State {
   pinned: Band[];
   hover: Band[];
   ai: AiReply | null;
+  aiCharts: Charts | null;
+  /** The prompt has been copied at least once — step 2 is done. */
+  copied: boolean;
 }
 let state: State | null = null;
 
-for (const i of ISSUES) els.issue.append(new Option(i.label, i.id));
+for (const i of ISSUES) {
+  els.issue.append(new Option(i.label, i.id));
+  els.aiIssue.append(new Option(i.label, i.id));
+}
 
 // ── Loading ───────────────────────────────────────────────────────────────
 
@@ -91,15 +105,18 @@ function load(text: string, fileName: string) {
   const pcIndex = dump.connections.map((c, i) => [c.stats.size, i]).sort((a, b) => b[0] - a[0])[0][1];
   state?.charts?.destroy();
   state?.explorer?.destroy();
-  state = { dump, fileName, pcIndex, ...analyse(dump, pcIndex), charts: null, explorer: null, pinned: [], hover: [], ai: null };
+  state?.aiCharts?.destroy();
+  state = { dump, fileName, pcIndex, ...analyse(dump, pcIndex), charts: null, explorer: null, pinned: [], hover: [], ai: null, aiCharts: null, copied: false };
   els.reply.value = '';
   els.aiOut.innerHTML = '';
   els.replyError.hidden = true;
   renderAll();
+  renderAi();
   els.landing.hidden = true;
   els.report.hidden = false;
   window.scrollTo({ top: 0 });
-  $('rep-title')?.focus({ preventScroll: true });
+  if (new URLSearchParams(location.search).get('view') === 'ai') setView('ai');
+  else $('rep-title')?.focus({ preventScroll: true });
 }
 
 function analyse(dump: Dump, i: number) {
@@ -141,7 +158,9 @@ els.demo.addEventListener('click', () => {
 els.reset.addEventListener('click', () => {
   state?.charts?.destroy();
   state?.explorer?.destroy();
+  state?.aiCharts?.destroy();
   state = null;
+  setView('report', false);
   els.report.hidden = true;
   els.landing.hidden = false;
   els.file.value = '';
@@ -188,6 +207,8 @@ function renderAll() {
     Object.assign(s, analyse(s.dump, s.pcIndex));
     s.pinned = [];
     renderAll();
+    renderAiResult();
+    renderAi();
   });
 
   renderText();
@@ -418,56 +439,257 @@ els.logFilter.addEventListener('change', () => {
 
 // ── Controls ──────────────────────────────────────────────────────────────
 
-els.issue.addEventListener('change', () => {
+function setIssue(id: string) {
+  els.issue.value = id;
+  els.aiIssue.value = id;
   // Keep the chosen problem in the URL so a refreshed or shared link reopens with it.
   const q = new URLSearchParams(location.search);
-  if (issue() === 'none') q.delete('issue');
-  else q.set('issue', issue());
+  if (id === 'none') q.delete('issue');
+  else q.set('issue', id);
   history.replaceState(null, '', `${location.pathname}${q.size ? `?${q}` : ''}`);
-  if (state) renderVerdict();
+  if (state) {
+    renderVerdict();
+    renderAi();
+  }
+}
+els.issue.addEventListener('change', () => setIssue(els.issue.value));
+els.aiIssue.addEventListener('change', () => setIssue(els.aiIssue.value));
+els.note.addEventListener('input', () => {
+  if (!state) return;
+  renderVerdict();
+  renderSteps();
 });
-els.note.addEventListener('input', () => state && renderVerdict());
 els.showIps.addEventListener('change', () => state && renderText());
 
 function flash(msg: string) {
   els.status.textContent = msg;
   setTimeout(() => (els.status.textContent = ''), 2500);
 }
-async function copy(text: string, msg: string) {
+async function copy(text: string, msg: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
     flash(msg);
+    return true;
   } catch {
     flash('Couldn’t reach the clipboard — select the text and copy it manually.');
+    return false;
   }
 }
 els.copySummary.addEventListener('click', () => state && copy(V.textSummary(ctx(), verdictFor(issue(), state.d, state.m), issueLabel()), 'Summary copied — paste it into the ticket.'));
-els.copyPrompt.addEventListener('click', () => copy(els.prompt.value, 'Prompt copied — paste it into your AI tool.'));
 els.print.addEventListener('click', () => {
-  document.querySelectorAll('#report details').forEach((d) => d.setAttribute('open', ''));
+  document.querySelectorAll('#view-report details').forEach((d) => d.setAttribute('open', ''));
   window.print();
 });
 
-els.showReply.addEventListener('click', () => {
+// ── Views: Analysis ⇄ AI workspace ────────────────────────────────────────
+
+type View = 'report' | 'ai';
+
+function setView(view: View, focus = true) {
+  const ai = view === 'ai';
+  els.viewReport.hidden = ai;
+  els.viewAi.hidden = !ai;
+  els.tabReport.setAttribute('aria-selected', String(!ai));
+  els.tabAi.setAttribute('aria-selected', String(ai));
+  els.tabReport.tabIndex = ai ? -1 : 0;
+  els.tabAi.tabIndex = ai ? 0 : -1;
+  const q = new URLSearchParams(location.search);
+  if (ai) q.set('view', 'ai');
+  else q.delete('view');
+  history.replaceState(null, '', `${location.pathname}${q.size ? `?${q}` : ''}`);
+  if (!focus) return;
+  window.scrollTo({ top: 0 });
+  // Move focus into the new view so keyboard and screen-reader users land where the content changed.
+  ($(ai ? 'ai-title' : 'rep-title') as HTMLElement | null)?.focus({ preventScroll: true });
+}
+
+els.tabReport.addEventListener('click', () => setView('report'));
+els.tabAi.addEventListener('click', () => setView('ai'));
+for (const tab of [els.tabReport, els.tabAi]) {
+  tab.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const next = tab === els.tabReport ? els.tabAi : els.tabReport;
+    setView(next === els.tabAi ? 'ai' : 'report', false);
+    next.focus();
+  });
+}
+els.aiBanner.addEventListener('click', (e) => {
+  if ((e.target as HTMLElement).closest('[data-open-ai]')) setView('ai');
+});
+
+// ── AI workspace ──────────────────────────────────────────────────────────
+
+function renderAi() {
   if (!state) return;
+  els.aiIssue.value = els.issue.value;
+  renderSteps();
+  renderAiBanner();
+  els.aiDot.hidden = !state.ai;
+}
+
+/** Highlight the step to do next; tick the ones already done. */
+function renderSteps() {
+  const s = state!;
+  const done = {
+    1: issue() !== 'none' || els.note.value.trim() !== '',
+    2: s.copied || !!s.ai,
+    3: !!s.ai,
+  };
+  const current = !done[2] ? 2 : !done[3] ? 3 : 0;
+  els.aiSteps.querySelectorAll<HTMLElement>('[data-step]').forEach((li) => {
+    const n = Number(li.dataset.step) as 1 | 2 | 3;
+    li.classList.toggle('done', done[n]);
+    li.classList.toggle('current', n === current);
+    if (n === current) li.setAttribute('aria-current', 'step');
+    else li.removeAttribute('aria-current');
+  });
+}
+
+function renderAiBanner() {
+  const s = state!;
+  const icon = '<span class="ab-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="18" height="18"><path d="M8 1.5l1.6 3.9 3.9 1.6-3.9 1.6L8 12.5 6.4 8.6 2.5 7l3.9-1.6z" fill="currentColor"/></svg></span>';
+  if (!s.ai) {
+    els.aiBanner.innerHTML = `${icon}
+      <div class="ab-text"><strong>Want a second opinion?</strong><span>Copy a ready-made prompt into ChatGPT, Claude or any AI tool, then paste its reply here. Nothing is sent from this page.</span></div>
+      <button type="button" class="btn ai" data-open-ai>Get AI Opinion</button>`;
+    return;
+  }
+  const r = s.ai;
+  els.aiBanner.innerHTML = `${icon}
+    <div class="ab-text"><strong>AI opinion: ${esc(r.verdict || r.rootCause.title)}</strong><span>${r.agreesWithAnalyser ? 'Agrees with' : 'Doesn’t fully agree with'} the measured findings${r.rootCause.title ? ` · likely cause: ${esc(r.rootCause.title)} (${esc(r.rootCause.confidence)} confidence)` : ''}. Its time ranges are shaded purple on the charts.</span></div>
+    <button type="button" class="btn ai" data-open-ai>View Opinion</button>`;
+}
+
+function renderAiResult() {
+  const s = state!;
+  s.aiCharts?.destroy();
+  s.aiCharts = null;
+  if (!s.ai) {
+    els.aiOut.innerHTML = '';
+    return;
+  }
+  const v = verdictFor(issue(), s.d, s.m);
+  const st = V.STATUS[v.status];
+  const problems = s.d.findings.filter((f) => f.severity === 'critical' || f.severity === 'warning');
+  const r = s.ai;
+  els.aiOut.innerHTML = `
+    <section class="ai-result" aria-labelledby="ai-result-title">
+      <h3 class="rh" id="ai-result-title" tabindex="-1">Measured vs AI</h3>
+      <div class="vs">
+        <div class="vs-col">
+          <p class="who">Measured by this site</p>
+          <span class="badge ${st.tone}">${esc(st.label)}</span>
+          <h4>${esc(v.headline)}</h4>
+          ${problems.length ? `<ul>${problems.slice(0, 4).map((f) => `<li>${esc(f.title)}</li>`).join('')}</ul>` : '<p class="small muted">No problems found.</p>'}
+        </div>
+        <div class="vs-col ai-side">
+          <p class="who">AI opinion · not measured</p>
+          ${r.rootCause.title ? `<span class="badge violet">${esc(r.rootCause.confidence)} confidence</span>` : ''}
+          <h4>${esc(r.verdict || r.rootCause.title)}</h4>
+          ${r.rootCause.title && r.verdict ? `<p class="small muted">Likely cause: ${esc(r.rootCause.title)}</p>` : ''}
+        </div>
+      </div>
+      <p class="agree"><span class="badge ${r.agreesWithAnalyser ? 'green' : 'amber'}">${r.agreesWithAnalyser ? 'Agrees' : 'Disagrees'}</span>${r.agreesWithAnalyser ? 'The AI agrees with the measured findings.' : 'Compare the AI’s reasoning with the measured evidence before acting.'}</p>
+      ${aiBands().length && s.m.start !== null ? '<div class="panel ai-tl"><div class="chart" id="ai-timeline"></div><p class="legend lanes-legend"><span><i class="sw violet"></i>Times the AI points to</span><span><i class="sw red"></i>Measured problem</span><span><i class="sw amber"></i>Measured warning</span><span><i class="sw muted"></i>Agent muted</span></p></div>' : ''}
+      <div class="ai-actions">
+        <button type="button" class="btn" id="ai-to-charts">Show on All Charts</button>
+      </div>
+      ${V.aiCard(r)}
+    </section>`;
+
+  const el = document.getElementById('ai-timeline');
+  if (el && s.m.start !== null && s.m.end !== null) {
+    s.aiCharts = new Charts(s.m.start, s.m.end);
+    s.aiCharts.mount(el, {
+      kind: 'lanes',
+      title: 'AI vs measured',
+      lanes: [
+        { label: 'AI', spans: aiBands().map((b) => ({ ...b, cls: 'ai' })) },
+        {
+          label: 'Measured',
+          spans: problems
+            .flatMap((f) => f.ranges.map((x) => ({ from: x.from, to: Math.max(x.to, x.from + 2000), cls: f.severity, label: f.title })))
+            .sort((a, b) => (a.cls === b.cls ? 0 : a.cls === 'critical' ? 1 : -1)),
+        },
+        { label: 'Muted', spans: s.d.muted.map((x) => ({ ...x, cls: 'muted', label: 'Agent muted' })) },
+      ],
+    });
+  }
+  document.getElementById('ai-to-charts')?.addEventListener('click', () => {
+    setView('report', false);
+    document.getElementById('charts')?.scrollIntoView({ block: 'start' });
+  });
+}
+
+function showReply(): boolean {
+  if (!state) return false;
   const r = parseAiReply(els.reply.value);
   if (!r.ok) {
     els.replyError.textContent = r.error;
     els.replyError.hidden = false;
-    return;
+    return false;
   }
   els.replyError.hidden = true;
   state.ai = r.reply;
-  els.aiOut.innerHTML = V.aiCard(r.reply);
+  renderAiResult();
+  renderAi();
   applyBands();
+  const title = document.getElementById('ai-result-title');
+  title?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  title?.focus({ preventScroll: true });
+  return true;
+}
+
+function markCopied() {
+  if (!state) return;
+  state.copied = true;
+  renderSteps();
+}
+
+els.copyPrompt.addEventListener('click', async () => {
+  if (!state) return;
+  const msg = $('ai-copy-msg');
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+  let ok = false;
+  try {
+    await navigator.clipboard.writeText(els.prompt.value);
+    ok = true;
+  } catch {
+    // Some browsers (and locked-down corporate ones) refuse the async clipboard; try the old way.
+    const peek = $<HTMLDetailsElement>('ai-peek');
+    peek.open = true;
+    els.prompt.focus();
+    els.prompt.select();
+    try {
+      ok = document.execCommand('copy');
+    } catch {
+      ok = false;
+    }
+  }
+  if (ok) {
+    msg.textContent = 'Copied. Paste it into your AI tool, then paste its reply in step 3.';
+    els.copyPrompt.textContent = 'Copied ✓';
+    setTimeout(() => (els.copyPrompt.textContent = 'Copy Prompt'), 2000);
+    markCopied();
+  } else {
+    msg.textContent = `Your browser blocked automatic copying. The prompt is selected below, so press ${isMac ? '⌘C' : 'Ctrl+C'} to copy it.`;
+  }
 });
+// Copying the prompt by hand counts too.
+els.prompt.addEventListener('copy', markCopied);
+els.showReply.addEventListener('click', showReply);
+// Read the reply as soon as it's pasted; no extra click needed.
+els.reply.addEventListener('paste', () => setTimeout(() => els.reply.value.trim() && showReply(), 0));
 els.clearReply.addEventListener('click', () => {
   if (!state) return;
   state.ai = null;
   els.reply.value = '';
-  els.aiOut.innerHTML = '';
   els.replyError.hidden = true;
+  renderAiResult();
+  renderAi();
   applyBands();
+  els.reply.focus();
 });
 
 // ── Deep links ────────────────────────────────────────────────────────────
@@ -476,7 +698,10 @@ els.clearReply.addEventListener('click', () => {
 {
   const q = new URLSearchParams(location.search);
   const wanted = q.get('issue');
-  if (wanted && ISSUES.some((i) => i.id === wanted)) els.issue.value = wanted;
+  if (wanted && ISSUES.some((i) => i.id === wanted)) {
+    els.issue.value = wanted;
+    els.aiIssue.value = wanted;
+  }
   if (q.has('demo')) els.demo.click();
   const sample = q.get('sample');
   if (import.meta.env.DEV && sample && /^[\w-]+$/.test(sample)) {

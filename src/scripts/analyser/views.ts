@@ -221,14 +221,13 @@ export function eventLog(c: ViewCtx, pc: PeerConnection, filter: string): string
     .join('')}</tbody></table></div>`;
 }
 
+/** The AI's reasoning, below the side-by-side summary (which already shows verdict, cause and agreement). */
 export function aiCard(r: AiReply): string {
   const conf = (x: string) => `<span class="badge violet">${esc(x)} confidence</span>`;
   return `
-    <div class="ai-card" role="region" aria-label="AI second opinion">
-      <span class="badge violet">AI opinion · not measured · verify before acting</span>
-      ${r.verdict ? `<h3>${esc(r.verdict)}</h3>` : ''}
-      ${r.rootCause.title ? `<p><strong>Likely cause:</strong> ${esc(r.rootCause.title)} ${conf(r.rootCause.confidence)}</p><p class="muted">${esc(r.rootCause.explanation)}</p>` : ''}
-      <p class="small muted">${r.agreesWithAnalyser ? 'The AI agrees with the measured findings.' : 'The AI doesn’t fully agree with the measured findings. Compare its reasoning with the evidence above.'}</p>
+    <div class="ai-card" role="region" aria-label="AI reasoning">
+      <span class="badge violet">AI reasoning · not measured · verify before acting</span>
+      ${r.rootCause.explanation ? `<h4>Why</h4><p class="muted">${esc(r.rootCause.explanation)}</p>` : ''}
       ${r.hypotheses.length ? `<h4>Hypotheses</h4><ul class="ai-hyp">${r.hypotheses.map((h) => `<li><p><strong>${esc(h.title)}</strong> ${conf(h.confidence)}</p>${h.evidence.length ? `<ul>${h.evidence.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}${h.timeRanges.length ? `<p class="small muted">Shown on charts: ${h.timeRanges.map((t) => `${esc(t.from)}–${esc(t.to)}`).join(', ')}</p>` : ''}</li>`).join('')}</ul>` : ''}
       ${r.nextSteps.length ? `<h4>Next steps</h4><ol>${r.nextSteps.map((n) => `<li><span class="owner">${esc(n.owner || '—')}</span>${esc(n.action)}</li>`).join('')}</ol>` : ''}
       ${r.questionsToAsk.length ? `<h4>Questions to ask</h4><ul>${r.questionsToAsk.map((q) => `<li>${esc(q)}</li>`).join('')}</ul>` : ''}
