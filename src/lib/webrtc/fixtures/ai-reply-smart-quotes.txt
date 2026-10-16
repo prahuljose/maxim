@@ -1,0 +1,76 @@
+{
+“verdict”: “The agent’s network and audio connection were healthy for the whole call. The only problem found was at the end: the far end talked for 24 s (33:35–33:59) while the agent’s mic was still muted, after about 28 minutes on mute or hold, and the call closed 2 s later at 34:01.”,
+“rootCause”: {
+“title”: “Agent stayed muted after the far end came back”,
+“confidence”: “medium”,
+“explanation”: “There is no network or media fault on the agent’s side: 1 packet lost out of 101,994 received, jitter p95 was 9 ms in and 13 ms out, and estimated MOS was about 4.29 for audio the agent heard and 4.36 for audio the far end heard. The agent’s mic was muted from 5:35 to 33:59 with the far end silent, which looks like a hold. Far-end audio came back at 33:35 (level 0.259) while the agent was still muted, and the mic only went live at 33:59, two seconds before the call closed at 34:01. For those 24 s the far end most likely heard nothing from the agent. The data can’t show who ended the call or why.”
+},
+“agreesWithAnalyser”: true,
+“hypotheses”: [
+{
+“title”: “Agent was slow to unmute when the far end came back”,
+“confidence”: “medium”,
+“evidence”: [
+“Finding: far end spoke while the agent was muted, 33:35–33:59 (24 s)”,
+“farLevel 0.259 at 33:27 and 0.159 at 33:51 with mic=muted”,
+“Mute period 5:35–33:59 ends just 2 s before the call closed at 34:01”,
+“The data can’t tell whether the agent was talking into a muted mic (micLevel 0.019 in the 33:51 row may come from the last 2 s after unmuting)”
+],
+“timeRanges”: [{ “from”: “33:35”, “to”: “34:01” }]
+},
+{
+“title”: “Most of the call was hold or mute, with very little conversation”,
+“confidence”: “high”,
+“evidence”: [
+“Agent mic muted 3 times, 32 min 40 s in total: 0:23–3:35, 3:51–4:55, 5:35–33:59”,
+“Far end also silent: 0:31–3:35, 3:51–4:55, 5:43–33:35”,
+“secondsAudible: agent 18, far 55, both 36, silent 1930 of 2041 s”,
+“Whether hold music reached the customer can’t be seen from the agent’s leg”
+],
+“timeRanges”: [{ “from”: “0:31”, “to”: “3:35” }, { “from”: “3:51”, “to”: “4:55” }, { “from”: “5:43”, “to”: “33:35” }]
+},
+{
+“title”: “Brief network jitter spikes during the hold, with no audible effect”,
+“confidence”: “high”,
+“evidence”: [
+“8:15–11:03: jitter up to 24 ms (9:27), RTT 162 ms (9:03), buffer up to 251 ms (9:51), minMOS down to 3.51 (9:03)”,
+“19:03: jitter 15 ms, buffer 253 ms, minMOS 3.61”,
+“RTT spikes of 206 ms with 0.24% inbound loss (23:27), 150 ms (24:15), 173 ms (26:39)”,
+“All of these fall inside the mute/silent period, so no speech was affected; total concealment was only 2,640 ms over 2,039,880 ms of audio”
+],
+“timeRanges”: [{ “from”: “8:15”, “to”: “11:03” }, { “from”: “19:03”, “to”: “19:27” }, { “from”: “23:27”, “to”: “24:15” }, { “from”: “26:39”, “to”: “26:39” }]
+},
+{
+“title”: “Small packet loss on the agent’s outgoing audio at call setup”,
+“confidence”: “low”,
+“evidence”: [
+“outLoss 1.56% in the 0:00 and 0:03 rows, then 0% for the rest of the call”,
+“Overall outbound loss 0.002%”
+],
+“timeRanges”: [{ “from”: “0:00”, “to”: “0:06” }]
+},
+{
+“title”: “Narrowband PCMU codec chosen although Opus and G722 were offered”,
+“confidence”: “low”,
+“evidence”: [
+“Negotiated audio/PCMU (8 kHz); offered: PCMU, PCMA, opus, G722, G729”,
+“MOS stayed around 4.3, so this means normal phone-line sound, not a fault”
+],
+“timeRanges”: []
+}
+],
+“nextSteps”: [
+{ “owner”: “sprinklr”, “action”: “Pull the call’s hold/unhold and mute/unmute events and the disconnect reason from Sprinklr. Confirm whether 5:35–33:59 was a hold or a manual mute, and who ended the call at 34:01 (agent, customer, or transfer).” },
+{ “owner”: “sprinklr”, “action”: “Check whether the hold put the customer in a hold-music or queue state for the full 28 minutes. That leg isn’t visible in the agent’s browser stats.” },
+{ “owner”: “agent”, “action”: “Coaching: when you take a customer off hold, check right away that your mic is live, and speak first so the customer knows you’re back.” },
+{ “owner”: “network”, “action”: “No action for this call. If other calls from this site show the same jitter or RTT spikes around the same times (e.g. 9:03, 19:03, 23:27), check for congestion on the agent’s ethernet uplink.” },
+{ “owner”: “carrier”, “action”: “Only if the customer reports bad audio or no hold music: check the PSTN leg for this call, because it can’t be seen from the agent’s side.” }
+],
+“questionsToAsk”: [
+“Was the customer on hold from about 5:35 to 33:59, and was a 28-minute hold expected for this case?”,
+“At about 33:35, did you hear the customer (or another party) speaking before you unmuted or took them off hold?”,
+“Who ended the call at 34:01: you, the customer, or a transfer?”,
+“Did the customer say they couldn’t hear you, or that they heard silence instead of hold music?”
+],
+“customerFacingSummary”: “The connection on our side was clear and stable for the whole call, with no dropouts or quality problems. Most of the call was spent on hold, and when the line became active again near the end, it took about 20 seconds before our agent could be heard.”
+}

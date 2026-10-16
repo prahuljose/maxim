@@ -1,0 +1,167 @@
+---
+import Base from '../layouts/Base.astro';
+import '../styles/analyser.css';
+---
+
+<Base
+  title="Maxim — WebRTC Call Analyser"
+  description="Drop in a webrtc-internals dump from Chrome or the Sprinklr Voice Debug Console and see what went wrong on the call, when, and on whose side. Runs entirely in your browser."
+>
+  <!-- ── Empty state ─────────────────────────────────────────── -->
+  <section id="landing" class="wrap landing">
+    <h1>Analyse a Call</h1>
+    <p class="lede">
+      Drop a <code translate="no">webrtc-internals</code> dump to see what went wrong, when, and on whose side.
+    </p>
+
+    <label id="drop" class="drop" for="file">
+      <input id="file" name="dump" type="file" accept=".txt,.json,application/json,text/plain" />
+      <svg class="drop-icon" aria-hidden="true" viewBox="0 0 24 24" width="28" height="28"
+        ><path d="M12 3v12m0 0-4-4m4 4 4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg
+      >
+      <span class="drop-title">Drop a dump here or <u>choose a file</u></span>
+      <span class="drop-sub">Stays on this computer</span>
+    </label>
+    <p class="load-error" id="load-error" role="alert" hidden></p>
+
+    <div class="landing-links">
+      <button type="button" class="btn link" id="demo">Try a Demo Call</button>
+      <details class="howto">
+        <summary>How Do I Get a Dump?</summary>
+        <ol>
+          <li><strong>Sprinklr:</strong> open the conversation in the Voice Debug Console, choose the agent’s participant, and download the WebRTC internals dump.</li>
+          <li><strong>Any Chrome softphone:</strong> open <code translate="no">chrome://webrtc-internals</code> before the call. Afterwards, choose <em>Create a WebRTC-Internals dump</em> → <em>Download</em>.</li>
+          <li>Use the agent’s browser leg. Phone-network legs have no WebRTC stats.</li>
+        </ol>
+      </details>
+    </div>
+  </section>
+
+  <!-- ── Report ──────────────────────────────────────────────── -->
+  <section id="report" class="wrap report" hidden aria-labelledby="rep-title">
+    <div class="rep-bar">
+      <div id="rep-head" class="rep-head"></div>
+      <div class="rep-actions no-print">
+        <button type="button" class="btn" id="copy-summary">Copy Summary</button>
+        <button type="button" class="btn" id="print">Print</button>
+        <button type="button" class="btn primary" id="reset">New File</button>
+      </div>
+    </div>
+    <div class="rep-sub no-print">
+      <div id="pc-pick"></div>
+      <label class="check"><input type="checkbox" id="show-ips" name="show-ips" /> Show IP addresses</label>
+      <span class="status" id="status" role="status" aria-live="polite"></span>
+    </div>
+
+    <div id="verdict-box" class="verdict">
+      <label class="v-pick">
+        <span>Reported problem</span>
+        <select id="issue" name="issue" autocomplete="off"></select>
+      </label>
+      <div id="verdict" aria-live="polite"></div>
+    </div>
+
+    <div id="scorecards"></div>
+
+    <h2 class="sec">Findings</h2>
+    <div id="findings"></div>
+
+    <h2 class="sec">Timeline</h2>
+    <div class="panel">
+      <div class="chart" id="timeline"></div>
+      <p class="legend lanes-legend">
+        <span><i class="sw s2"></i>Far end audible</span>
+        <span><i class="sw s1"></i>Agent audible</span>
+        <span><i class="sw muted"></i>Muted</span>
+        <span><i class="sw hold"></i>Hold</span>
+        <span><i class="sw red"></i>Problem</span>
+        <span><i class="sw amber"></i>Warning</span>
+      </p>
+    </div>
+
+    <h2 class="sec">Charts <span class="hint">Hover any chart to compare the same moment on all of them</span></h2>
+    <div id="charts" class="charts"></div>
+
+    <div class="more">
+      <details class="fold">
+        <summary>More Charts</summary>
+        <div id="charts-more" class="charts"></div>
+      </details>
+
+      <details class="fold">
+        <summary>Network Path</summary>
+        <div id="connection"></div>
+      </details>
+
+      <details class="fold">
+        <summary>Device &amp; Browser</summary>
+        <div id="device"></div>
+      </details>
+
+      <details class="fold">
+        <summary>Totals</summary>
+        <div id="totals"></div>
+      </details>
+
+      <details class="fold">
+        <summary>Negotiation (SDP)</summary>
+        <div id="negotiations"></div>
+      </details>
+
+      <details class="fold">
+        <summary>Raw Stats</summary>
+        <p class="muted small">Plot any stat Chrome recorded. Counters can be shown as a per-second rate.</p>
+        <div class="ex-controls">
+          <label class="field"><span>Stat</span><select id="ex-series" name="ex-series" autocomplete="off"></select></label>
+          <label class="field"><span>Field</span><select id="ex-field" name="ex-field" autocomplete="off"></select></label>
+          <label class="check"><input type="checkbox" id="ex-rate" name="ex-rate" checked /> Per-second rate</label>
+        </div>
+        <div class="panel"><div class="chart" id="ex-chart"></div></div>
+      </details>
+
+      <details class="fold">
+        <summary>Event Log</summary>
+        <label class="field inline"><span>Show</span><select id="log-filter" name="log-filter" autocomplete="off"></select></label>
+        <div id="log"></div>
+      </details>
+
+      <details class="fold" id="ai-fold">
+        <summary>AI Second Opinion <span class="hint">Optional</span></summary>
+        <p class="muted">
+          This site never calls an AI. To get a second opinion, copy the prompt into any AI tool and paste its reply
+          back here. IP addresses are masked in the prompt, and the reply is shown as interpretation only.
+        </p>
+        <label class="field">
+          <span>Notes for the AI <small>optional</small></span>
+          <textarea id="note" name="note" rows="2" autocomplete="off" placeholder="e.g. customer said the agent kept cutting out around minute 3…"></textarea>
+        </label>
+        <div class="ai-steps">
+          <div>
+            <label class="step" for="ai-prompt"><span aria-hidden="true">1</span>Copy the prompt</label>
+            <textarea id="ai-prompt" name="ai-prompt" rows="7" readonly spellcheck="false"></textarea>
+            <button type="button" class="btn" id="ai-copy">Copy Prompt</button>
+          </div>
+          <div>
+            <label class="step" for="ai-reply"><span aria-hidden="true">2</span>Paste the reply</label>
+            <textarea id="ai-reply" name="ai-reply" rows="7" autocomplete="off" spellcheck="false" placeholder="Paste the AI’s JSON reply…"></textarea>
+            <div class="row">
+              <button type="button" class="btn primary" id="ai-show">Show Opinion</button>
+              <button type="button" class="btn" id="ai-clear">Clear</button>
+            </div>
+            <p class="load-error" id="ai-error" role="alert" hidden></p>
+          </div>
+        </div>
+      </details>
+      <div id="ai-out"></div>
+
+      <details class="fold">
+        <summary>How Findings Are Decided</summary>
+        <div id="thresholds"></div>
+      </details>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import '../scripts/analyser/main';
+</script>

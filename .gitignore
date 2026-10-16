@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+.vercel/
+.DS_Store
+.env*
+
+# Real call dumps contain IPs and ICE candidates — never commit
+samples/
+.claude/

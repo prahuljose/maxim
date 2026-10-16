@@ -1,0 +1,253 @@
+@import '@fontsource-variable/inter';
+
+:root {
+  --bg: #ffffff;
+  --surface: #fafafa;
+  --raised: #ffffff;
+  --border: #e5e5e5;
+  --border-strong: #d4d4d4;
+  --text: #0a0a0a;
+  --muted: #666666;
+  --faint: #8f8f8f;
+  --link: #0062d1;
+  --focus: #0062d1;
+
+  /* Meaning, not decoration */
+  --red: #d42a20;
+  --red-bg: #fdecea;
+  --amber: #a35200;
+  --amber-bg: #fdf1df;
+  --green: #18794e;
+  --green-bg: #e6f4ec;
+  --blue: #0062d1;
+  --blue-bg: #e8f1fc;
+  --violet: #6e44c9;
+  --violet-bg: #f0eafb;
+
+  /* Chart series — blue/orange stays distinguishable for most colour-vision types */
+  --s1: #0062d1;
+  --s2: #e8590c;
+
+  --font: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --radius: 8px;
+  --max: 1040px;
+  --gutter: clamp(16px, 4vw, 32px);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --raised: #161616;
+    --border: #262626;
+    --border-strong: #3a3a3a;
+    --text: #ededed;
+    --muted: #a1a1a1;
+    --faint: #7a7a7a;
+    --link: #52a8ff;
+    --focus: #52a8ff;
+    --red: #ff6166;
+    --red-bg: #3a1214;
+    --amber: #f5a524;
+    --amber-bg: #33240b;
+    --green: #3fcf8e;
+    --green-bg: #0f2a1d;
+    --blue: #52a8ff;
+    --blue-bg: #0d2240;
+    --violet: #b79cf5;
+    --violet-bg: #251c3b;
+    --s1: #52a8ff;
+    --s2: #ff8a3d;
+    color-scheme: dark;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Author display rules must never beat the hidden attribute. */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.55;
+  font-feature-settings: 'cv11' 1, 'ss01' 1;
+  -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--link);
+  text-underline-offset: 3px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.wrap {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.skip {
+  position: absolute;
+  left: 8px;
+  top: -48px;
+  z-index: 10;
+  background: var(--text);
+  color: var(--bg);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+}
+.skip:focus {
+  top: 8px;
+}
+
+/* ── Controls ─────────────────────────────────────────── */
+.btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover {
+  background: var(--surface);
+  border-color: var(--faint);
+}
+.btn.primary {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+.btn.primary:hover {
+  opacity: 0.88;
+}
+.btn.link {
+  border-color: transparent;
+  background: none;
+  color: var(--link);
+  padding: 0 4px;
+  min-height: 0;
+}
+.btn.link:hover {
+  text-decoration: underline;
+}
+
+select,
+textarea,
+input[type='text'] {
+  font: inherit;
+  font-size: 15px;
+  color: var(--text);
+  background-color: var(--raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  max-width: 100%;
+}
+select {
+  min-height: 36px;
+  padding-right: 28px;
+}
+select:hover,
+textarea:hover {
+  border-color: var(--faint);
+}
+textarea {
+  width: 100%;
+  resize: vertical;
+}
+input[type='checkbox'] {
+  accent-color: var(--text);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.small {
+  font-size: 13px;
+}
+.mono {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+@media print {
+  :root {
+    --bg: #fff;
+    --surface: #fff;
+    --raised: #fff;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
